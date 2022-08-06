@@ -223,6 +223,50 @@ def instrument_codes():
 		\n\nThis will download all spectrograms from all antenna types at Blein, Switzerland")
 
 
+def instrument_codes(select_year, select_month, select_day):
+	"""
+
+	Finds the code of all instruments that sent data on the date selected and
+	returns them as a set.
+	There is a list at http://soleil.i4ds.ch/solarradio/data/readme.txt This is not
+	always up to date. Some instrument are inactiv or even out of service. Use this
+	funktion to get a list of active instruments
+
+	Author: Andreas Wassmer
+
+	Parameters
+	----------
+	select_year:
+		int
+	select_month:
+		int
+	select_day:
+		int
+
+
+	Returns
+	-------
+	Set of names of instruments active at that date
+
+	"""
+
+	assert (len(str(select_year)) == 4 and type(select_year) == int), "Year must be a 4-digit integer."
+	assert (1 <= select_month <= 12 and type(select_month) == int), "Month must be a valid number."
+	assert (1 <= select_day <= 31 and type(select_day) == int), "Day must be a valid number."
+
+	dt = datetime.date(select_year, select_month, select_day)
+	observation_page = f"{url}{dt.strftime('%Y/%m/%d')}"
+	page = requests.get(observation_page)
+	soup = BeautifulSoup(page.content, 'html.parser')
+	# parse all tags in to list. this will speed up the selection process significantly
+	all_tags = soup.find_all('a')
+	instruments = set()
+	for i in range(len(all_tags)-6):
+		# list of fits file starts at line 5
+		instr = all_tags[5+i].get_text()
+		instruments.add(instr.split("_")[0])
+
+	return instruments
 
 def download(select_year, select_month, select_day, instruments):
 	"""
@@ -246,8 +290,8 @@ def download(select_year, select_month, select_day, instruments):
 	"""
 
 	assert (len(str(select_year)) == 4 and type(select_year) == int), "Year must be a 4-digit integer."
-	assert (select_month >= 1 and select_month <=12 and type(select_month) == int), "Month must be a valid number."
-	assert (select_day >= 1 and select_day <=31 and type(select_day) == int), "Day must be a valid number."
+	assert (1 <= select_month <= 12 and type(select_month) == int), "Month must be a valid number."
+	assert (1 <= select_day <= 31 and type(select_day) == int), "Day must be a valid number."
 	assert (type(instruments) == str), "Fourth parameter must be a string: either an instrument ID or a wildstring."
 	
 	if select_month < 10:
@@ -265,7 +309,7 @@ def download(select_year, select_month, select_day, instruments):
 	try:
 		select_date = datetime.date.fromisoformat('{}-{}-{}'.format(select_year_str, select_month_str, select_day_str))
 	except:
-		raise ValueError("{}-{}-{} Date is invalid".format(select_year_str, select_month_str, d_str)) from None
+		raise ValueError("{}-{}-{} Date is invalid".format(select_year_str, select_month_str, select_day_str)) from None
 	assert (select_date <= datetime.date.today()), "{}-{}-{} The date has not yet occurred".format(select_year_str, select_month_str, select_day_str)
 
 	url_day = url + select_year_str + '/' + select_month_str + '/' + select_day_str + '/'
