@@ -246,7 +246,7 @@ def instrument_codes(select_year, select_month, select_day):
 
 	Returns
 	-------
-	Set of names of instruments active at that date
+	Set of names of instruments active at that date. The set is not sorted
 
 	"""
 
